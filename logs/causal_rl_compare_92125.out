@@ -1,3 +1,9 @@
+Unloading shared
+  WARNING: Did not unuse /cm/shared/modulefiles
+[start] Sun May 24 01:54:24 PM CDT 2026 host=node045
+name, memory.total [MiB]
+NVIDIA L40S, 46068 MiB
+[compare] reusing cached random baseline: (30, 50)
 {
   "random": {
     "n_episodes": 30,
@@ -18,3 +24,7 @@
     "device": "cuda"
   }
 }
+
+Saved /ddnlus/barsatkhadka/causality-RL/phase 5/results/phase5_discovery_curves.png
+Saved /ddnlus/barsatkhadka/causality-RL/phase 5/results/phase5_learning_trend.png
+[done]  Sun May 24 01:54:33 PM CDT 2026
