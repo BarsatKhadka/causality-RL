@@ -1,0 +1,23 @@
+# Phase 5 deps. Install on HPC with:
+#   python -m venv .venv
+#   source .venv/bin/activate
+#   pip install --upgrade pip wheel
+#   # If using CUDA 12.1+ on L40:
+#   pip install torch==2.4.1 --index-url https://download.pytorch.org/whl/cu121
+#   pip install -r phase\ 5/requirements.txt
+#
+# (torch is listed below too as a fallback for CPU-only envs / smoke testing.)
+
+torch>=2.2,<2.6
+transformer_lens>=2.0,<4.0
+numpy>=1.26,<3
+matplotlib>=3.8
+tqdm>=4.66
+gymnasium>=0.29,<2
+tyro>=0.7
+einops>=0.8
+jaxtyping>=0.2
+transformers>=4.40
+tokenizers>=0.20
+huggingface_hub>=0.24
+accelerate>=0.30
