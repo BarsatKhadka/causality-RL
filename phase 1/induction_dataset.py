@@ -151,7 +151,9 @@ def load_natural_corpus(
             "of how agents ought to take actions to maximize cumulative reward. "
             "Language models predict the next token given the preceding context. "
         ) * 4000
-    toks = model.to_tokens(text, prepend_bos=False)[0][:n_tokens]
+    # Use the raw tokenizer to bypass GPT-2's 1024 max-len cap.
+    ids = model.tokenizer.encode(text)
+    toks = torch.tensor(ids[:n_tokens], dtype=torch.long)
     _NATURAL_CORPUS_CACHE[key] = toks
     return toks
 
