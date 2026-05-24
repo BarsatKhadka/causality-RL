@@ -1,0 +1,43 @@
+Unloading shared
+  WARNING: Did not unuse /cm/shared/modulefiles
+[start] Sun May 24 04:12:05 PM CDT 2026 K=1 TAG=k1 STEPS=50000 host=node045
+name, memory.total [MiB], driver_version
+NVIDIA L40S, 46068 MiB, 570.172.08
+[setup] device = cuda
+[env] loading gpt2 on cuda...
+Loaded pretrained model gpt2 into HookedTransformer
+[env] model loaded in 1.5s
+[setup] env: obs_dim=288, n_actions=144, episode_len=50, K_plan=1
+[setup] total_timesteps=50000, eval_every=2000
+[setup] policy params = 177041
+[train] step     50  train_rmax= 3.31  eval_rmax= 2.50  eval_base= 9.27  fwd=550  elapsed=12s
+[train] step   2000  train_rmax= 2.85  eval_rmax= 3.48  eval_base= 9.27  fwd=3000  elapsed=68s
+[train] step   4000  train_rmax= 2.85  eval_rmax= 3.50  eval_base= 9.27  fwd=5499  elapsed=125s
+[train] step   6000  train_rmax= 2.85  eval_rmax= 3.50  eval_base= 9.27  fwd=7998  elapsed=183s
+[train] step   8000  train_rmax= 2.85  eval_rmax= 3.50  eval_base= 9.27  fwd=10498  elapsed=241s
+[train] step  10000  train_rmax= 2.85  eval_rmax= 3.50  eval_base= 9.27  fwd=12998  elapsed=299s
+[train] step  12000  train_rmax= 2.85  eval_rmax= 3.50  eval_base= 9.27  fwd=15498  elapsed=357s
+[train] step  14000  train_rmax= 2.85  eval_rmax= 3.50  eval_base= 9.27  fwd=17998  elapsed=415s
+[train] step  16000  train_rmax= 2.85  eval_rmax= 3.50  eval_base= 9.27  fwd=20498  elapsed=473s
+[train] step  18000  train_rmax= 2.85  eval_rmax= 3.50  eval_base= 9.27  fwd=22998  elapsed=531s
+[train] step  20000  train_rmax= 2.85  eval_rmax= 3.50  eval_base= 9.27  fwd=25498  elapsed=588s
+[train] step  22000  train_rmax= 2.85  eval_rmax= 3.50  eval_base= 9.27  fwd=27997  elapsed=646s
+[train] step  24000  train_rmax= 2.85  eval_rmax= 3.50  eval_base= 9.27  fwd=30496  elapsed=703s
+[train] step  26000  train_rmax= 2.85  eval_rmax= 3.50  eval_base= 9.27  fwd=32996  elapsed=761s
+[train] step  28000  train_rmax= 2.85  eval_rmax= 3.50  eval_base= 9.27  fwd=35496  elapsed=819s
+[train] step  30000  train_rmax= 2.85  eval_rmax= 3.50  eval_base= 9.27  fwd=37996  elapsed=876s
+[train] step  32000  train_rmax= 2.85  eval_rmax= 3.50  eval_base= 9.27  fwd=40495  elapsed=934s
+[train] step  34000  train_rmax= 2.85  eval_rmax= 3.50  eval_base= 9.27  fwd=42995  elapsed=991s
+[train] step  36000  train_rmax= 2.85  eval_rmax= 3.50  eval_base= 9.27  fwd=45495  elapsed=1049s
+[train] step  38000  train_rmax= 2.85  eval_rmax= 3.50  eval_base= 9.27  fwd=47995  elapsed=1106s
+[train] step  40000  train_rmax= 2.85  eval_rmax= 3.50  eval_base= 9.27  fwd=50494  elapsed=1164s
+[train] step  42000  train_rmax= 2.85  eval_rmax= 3.50  eval_base= 9.27  fwd=52993  elapsed=1221s
+[train] step  44000  train_rmax= 2.85  eval_rmax= 3.50  eval_base= 9.27  fwd=55493  elapsed=1279s
+[train] step  46000  train_rmax= 2.85  eval_rmax= 3.50  eval_base= 9.27  fwd=57993  elapsed=1336s
+[train] step  48000  train_rmax= 2.85  eval_rmax= 3.50  eval_base= 9.27  fwd=60493  elapsed=1394s
+[train] step  50000  train_rmax= 2.85  eval_rmax= 3.50  eval_base= 9.27  fwd=62992  elapsed=1451s
+[oracle] computing per-episode best (n=10, will cost ~1440 fwd calls)...
+[oracle] mean_best=3.500  agent_eval_rmax=3.510  gap=-0.010  (31s)
+
+[done] tag=k1  final_eval_rmax=3.510  fwd_calls=66932  wall=1537s
+[done]  Sun May 24 04:37:49 PM CDT 2026
