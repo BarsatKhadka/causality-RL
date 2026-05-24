@@ -1,0 +1,26 @@
+{
+  "n_runs": 100,
+  "n_steps": 50,
+  "topK": {
+    "top1": {
+      "success_rate": 0.38,
+      "median_steps_if_found": 33.5,
+      "mean_steps_if_found": 29.342105263157894
+    },
+    "top3": {
+      "success_rate": 0.06,
+      "median_steps_if_found": 43.0,
+      "mean_steps_if_found": 42.666666666666664
+    },
+    "top5": {
+      "success_rate": 0.0,
+      "median_steps_if_found": null,
+      "mean_steps_if_found": null
+    },
+    "top10": {
+      "success_rate": 0.0,
+      "median_steps_if_found": null,
+      "mean_steps_if_found": null
+    }
+  }
+}
