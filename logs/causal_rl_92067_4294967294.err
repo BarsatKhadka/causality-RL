@@ -1,0 +1,19 @@
+Traceback (most recent call last):
+  File "/ddnlus/barsatkhadka/causality-RL/phase 5/ppo_planning_real.py", line 31, in <module>
+    from head_env_real import RealHeadDiscoveryEnv
+  File "/ddnlus/barsatkhadka/causality-RL/phase 5/head_env_real.py", line 31, in <module>
+    from induction_dataset import (  # noqa: E402
+    ...<3 lines>...
+    )
+  File "/ddnlus/barsatkhadka/causality-RL/phase 1/induction_dataset.py", line 13, in <module>
+    from transformer_lens import HookedTransformer
+  File "/ddnlus/barsatkhadka/causality-RL/.venv/lib/python3.13/site-packages/transformer_lens/__init__.py", line 1, in <module>
+    from . import hook_points
+  File "/ddnlus/barsatkhadka/causality-RL/.venv/lib/python3.13/site-packages/transformer_lens/hook_points.py", line 29, in <module>
+    from transformer_lens.utils import Slice, SliceInput
+  File "/ddnlus/barsatkhadka/causality-RL/.venv/lib/python3.13/site-packages/transformer_lens/utils.py", line 31, in <module>
+    CACHE_DIR = transformers.TRANSFORMERS_CACHE
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/ddnlus/barsatkhadka/causality-RL/.venv/lib/python3.13/site-packages/transformers/utils/import_utils.py", line 2474, in __getattr__
+    raise AttributeError(f"module {self.__name__} has no attribute {name}")
+AttributeError: module transformers has no attribute TRANSFORMERS_CACHE

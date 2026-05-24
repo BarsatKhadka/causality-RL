@@ -1,0 +1,24 @@
+Unloading shared
+  WARNING: Did not unuse /cm/shared/modulefiles
+[start] Sun May 24 12:21:50 AM CDT 2026 host=node048
+name, memory.total [MiB]
+NVIDIA L40S, 46068 MiB
+[compare] generating random baseline (live GPT-2)...
+Loaded pretrained model gpt2 into HookedTransformer
+{
+  "random": {
+    "n_episodes": 30,
+    "mean_final_running_max": 2.45939040184021
+  },
+  "k1": {
+    "n_episodes": 50,
+    "mean_final_running_max": 3.5099096298217773,
+    "fwd_calls_total": 65485,
+    "wall_time_sec": 1531.083413362503,
+    "device": "cuda"
+  }
+}
+
+Saved /ddnlus/barsatkhadka/causality-RL/phase 5/results/phase5_discovery_curves.png
+Saved /ddnlus/barsatkhadka/causality-RL/phase 5/results/phase5_learning_trend.png
+[done]  Sun May 24 12:22:31 AM CDT 2026

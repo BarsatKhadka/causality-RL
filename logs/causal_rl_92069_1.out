@@ -1,0 +1,41 @@
+Unloading shared
+  WARNING: Did not unuse /cm/shared/modulefiles
+[start] Sat May 23 11:56:12 PM CDT 2026 K=5 TAG=k5 STEPS=50000 host=node048
+name, memory.total [MiB], driver_version
+NVIDIA L40S, 46068 MiB, 570.172.08
+[setup] device = cuda
+[env] loading gpt2 on cuda...
+Loaded pretrained model gpt2 into HookedTransformer
+[env] model loaded in 1.5s
+[setup] env: obs_dim=144, n_actions=144, episode_len=50, K_plan=5
+[setup] total_timesteps=50000, eval_every=2000
+[setup] policy params = 140177
+[train] step     50  train_rmax= 3.31  eval_rmax= 3.50  eval_base= 9.27  fwd=679  elapsed=15s
+[train] step   2000  train_rmax= 2.85  eval_rmax= 3.50  eval_base= 9.27  fwd=5589  elapsed=127s
+[train] step   4000  train_rmax= 2.85  eval_rmax= 3.50  eval_base= 9.27  fwd=10176  elapsed=231s
+[train] step   6000  train_rmax= 2.85  eval_rmax= 3.50  eval_base= 9.27  fwd=14521  elapsed=330s
+[train] step   8000  train_rmax= 2.85  eval_rmax= 3.50  eval_base= 9.27  fwd=18887  elapsed=430s
+[train] step  10000  train_rmax= 2.85  eval_rmax= 3.50  eval_base= 9.27  fwd=23256  elapsed=530s
+[train] step  12000  train_rmax= 2.85  eval_rmax= 3.50  eval_base= 9.27  fwd=27316  elapsed=623s
+[train] step  14000  train_rmax= 2.85  eval_rmax= 3.50  eval_base= 9.27  fwd=31228  elapsed=712s
+[train] step  16000  train_rmax= 2.85  eval_rmax= 3.50  eval_base= 9.27  fwd=34896  elapsed=797s
+[train] step  18000  train_rmax= 2.85  eval_rmax= 3.50  eval_base= 9.27  fwd=38548  elapsed=881s
+[train] step  20000  train_rmax= 2.85  eval_rmax= 3.50  eval_base= 9.27  fwd=41985  elapsed=960s
+[train] step  22000  train_rmax= 2.85  eval_rmax= 3.50  eval_base= 9.27  fwd=45300  elapsed=1036s
+[train] step  24000  train_rmax= 2.85  eval_rmax= 3.50  eval_base= 9.27  fwd=48606  elapsed=1112s
+[train] step  26000  train_rmax= 2.85  eval_rmax= 3.50  eval_base= 9.27  fwd=51895  elapsed=1188s
+[train] step  28000  train_rmax= 2.85  eval_rmax= 3.50  eval_base= 9.27  fwd=55184  elapsed=1264s
+[train] step  30000  train_rmax= 2.85  eval_rmax= 3.50  eval_base= 9.27  fwd=58420  elapsed=1338s
+[train] step  32000  train_rmax= 2.85  eval_rmax= 3.50  eval_base= 9.27  fwd=61751  elapsed=1415s
+[train] step  34000  train_rmax= 2.85  eval_rmax= 3.50  eval_base= 9.27  fwd=64930  elapsed=1488s
+[train] step  36000  train_rmax= 2.85  eval_rmax= 3.50  eval_base= 9.27  fwd=68027  elapsed=1560s
+[train] step  38000  train_rmax= 2.85  eval_rmax= 3.50  eval_base= 9.27  fwd=71170  elapsed=1633s
+[train] step  40000  train_rmax= 2.85  eval_rmax= 3.50  eval_base= 9.27  fwd=74356  elapsed=1707s
+[train] step  42000  train_rmax= 2.85  eval_rmax= 3.50  eval_base= 9.27  fwd=77475  elapsed=1779s
+[train] step  44000  train_rmax= 2.85  eval_rmax= 3.50  eval_base= 9.27  fwd=80657  elapsed=1853s
+[train] step  46000  train_rmax= 2.85  eval_rmax= 3.50  eval_base= 9.27  fwd=83995  elapsed=1931s
+[train] step  48000  train_rmax= 2.85  eval_rmax= 3.50  eval_base= 9.27  fwd=87432  elapsed=2011s
+[train] step  50000  train_rmax= 2.85  eval_rmax= 3.50  eval_base= 9.27  fwd=90964  elapsed=2094s
+
+[done] tag=k5  final_eval_rmax=3.510  fwd_calls=93696  wall=2156s
+[done]  Sun May 24 12:32:15 AM CDT 2026

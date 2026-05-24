@@ -1,0 +1,5 @@
+Unloading shared
+  WARNING: Did not unuse /cm/shared/modulefiles
+[start] Sat May 23 11:37:36 PM CDT 2026 K=1 TAG=smoke STEPS=1000 host=node048
+name, memory.total [MiB], driver_version
+NVIDIA L40S, 46068 MiB, 570.172.08

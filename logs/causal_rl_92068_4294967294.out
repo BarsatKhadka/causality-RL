@@ -1,0 +1,16 @@
+Unloading shared
+  WARNING: Did not unuse /cm/shared/modulefiles
+[start] Sat May 23 11:52:11 PM CDT 2026 K=1 TAG=smoke STEPS=1000 host=node048
+name, memory.total [MiB], driver_version
+NVIDIA L40S, 46068 MiB, 570.172.08
+[setup] device = cuda
+[env] loading gpt2 on cuda...
+Loaded pretrained model gpt2 into HookedTransformer
+[env] model loaded in 21.1s
+[setup] env: obs_dim=144, n_actions=144, episode_len=50, K_plan=1
+[setup] total_timesteps=1000, eval_every=2000
+[setup] policy params = 140177
+[train] step     50  train_rmax= 3.31  eval_rmax= 3.50  eval_base= 9.27  fwd=550  elapsed=18s
+
+[done] tag=smoke  final_eval_rmax=3.510  fwd_calls=4000  wall=94s
+[done]  Sat May 23 11:54:26 PM CDT 2026

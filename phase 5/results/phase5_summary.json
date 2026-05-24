@@ -1,0 +1,13 @@
+{
+  "random": {
+    "n_episodes": 30,
+    "mean_final_running_max": 2.45939040184021
+  },
+  "k1": {
+    "n_episodes": 50,
+    "mean_final_running_max": 3.5099096298217773,
+    "fwd_calls_total": 65485,
+    "wall_time_sec": 1531.083413362503,
+    "device": "cuda"
+  }
+}

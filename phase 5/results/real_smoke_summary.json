@@ -1,0 +1,21 @@
+{
+  "tag": "smoke",
+  "plan_k": 1,
+  "total_timesteps": 1000,
+  "n_test_seqs": 32,
+  "final_eval_mean_running_max": 3.5099096393585203,
+  "final_eval_mean_baseline": 9.466466083526612,
+  "fwd_calls_total": 4000,
+  "wall_time_sec": 94.3428418636322,
+  "eval_history": [
+    {
+      "step": 50,
+      "train_mean_running_max": 3.313326835632324,
+      "eval_mean_running_max": 3.499524450302124,
+      "eval_mean_baseline": 9.270838069915772,
+      "fwd_calls": 550,
+      "elapsed_sec": 18.12735629081726
+    }
+  ],
+  "device": "cuda"
+}
