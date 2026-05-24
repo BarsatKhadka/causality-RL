@@ -38,8 +38,10 @@ from ablation import logit_diff_with_head_ablated  # noqa: E402
 from transformer_lens import HookedTransformer  # noqa: E402
 
 
-SENTINEL = -1.0
 REPICK_PENALTY = -1.0
+# Score normalization: divide tried-head rewards by this so the obs channel
+# lives in roughly [0, 1.5]. Picked from observed baselines (~9.5).
+SCORE_SCALE = 10.0
 
 
 class RealHeadDiscoveryEnv(gym.Env):
@@ -77,8 +79,10 @@ class RealHeadDiscoveryEnv(gym.Env):
         self.n_heads_per_layer = int(self.model.cfg.n_heads)
         self.n_actions = self.n_layers * self.n_heads_per_layer
 
+        # 2-channel obs: [tried_mask (0/1), normalized_score (0 for untried, reward/SCORE_SCALE for tried)]
+        self.obs_dim = 2 * self.n_actions
         self.observation_space = spaces.Box(
-            low=-np.inf, high=np.inf, shape=(self.n_actions,), dtype=np.float32
+            low=-np.inf, high=np.inf, shape=(self.obs_dim,), dtype=np.float32
         )
         self.action_space = spaces.Discrete(self.n_actions)
 
@@ -88,7 +92,8 @@ class RealHeadDiscoveryEnv(gym.Env):
         self._distractors = None
         self._baseline = 0.0
         self._episode_cache: dict[int, float] = {}
-        self._obs: Optional[np.ndarray] = None
+        self._tried_mask: Optional[np.ndarray] = None
+        self._score_vec: Optional[np.ndarray] = None
         self._tried: Optional[np.ndarray] = None
         self._step_count = 0
         self._running_max = -np.inf
@@ -133,6 +138,9 @@ class RealHeadDiscoveryEnv(gym.Env):
 
     # ---------------- Gym API ----------------
 
+    def _build_obs(self) -> np.ndarray:
+        return np.concatenate([self._tried_mask, self._score_vec]).astype(np.float32)
+
     def reset(self, *, seed: int | None = None, options: dict | None = None):
         super().reset(seed=seed)
         # Per-episode seed: prefer explicit, else derive from episode index + offset
@@ -141,29 +149,31 @@ class RealHeadDiscoveryEnv(gym.Env):
         self._episode_seed = seed
         self._resample_batch(seed)
         self._episode_cache.clear()
-        self._obs = np.full(self.n_actions, SENTINEL, dtype=np.float32)
+        self._tried_mask = np.zeros(self.n_actions, dtype=np.float32)
+        self._score_vec = np.zeros(self.n_actions, dtype=np.float32)
         self._tried = np.zeros(self.n_actions, dtype=bool)
         self._step_count = 0
         self._running_max = -np.inf
         self._episode_idx += 1
-        return self._obs.copy(), self._info(repicked=False)
+        return self._build_obs(), self._info(repicked=False)
 
     def step(self, action: int):
-        assert self._obs is not None, "call reset() first"
+        assert self._tried is not None, "call reset() first"
         action = int(action)
         repicked = bool(self._tried[action])
         if repicked:
             reward = REPICK_PENALTY
         else:
             reward = self.query_score(action)
-            self._obs[action] = reward
+            self._tried_mask[action] = 1.0
+            self._score_vec[action] = reward / SCORE_SCALE
             self._tried[action] = True
             if reward > self._running_max:
                 self._running_max = reward
         self._step_count += 1
         terminated = False
         truncated = self._step_count >= self.max_steps
-        return self._obs.copy(), reward, terminated, truncated, self._info(repicked=repicked)
+        return self._build_obs(), reward, terminated, truncated, self._info(repicked=repicked)
 
     def action_mask(self) -> np.ndarray:
         assert self._tried is not None

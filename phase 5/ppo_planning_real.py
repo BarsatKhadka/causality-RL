@@ -44,11 +44,12 @@ class Args:
     num_minibatches: int = 4
     update_epochs: int = 4
     clip_coef: float = 0.2
-    ent_coef: float = 0.01
+    ent_coef: float = 0.05            # higher: avoid early collapse on stochastic env
     vf_coef: float = 0.5
     max_grad_norm: float = 0.5
     norm_adv: bool = True
     anneal_lr: bool = True
+    lr_min_frac: float = 0.2          # don't anneal LR all the way to 0
 
     plan_k: int = 5                       # 1 = vanilla PPO, >1 = best-of-K planning
     n_test_seqs: int = 32                 # induction batch size per ablation
@@ -151,7 +152,11 @@ def evaluate_policy(agent, env, n_episodes, device, K_plan, seed_base):
             for t in range(n_steps):
                 obs_t = torch.as_tensor(obs, dtype=torch.float32, device=device).unsqueeze(0)
                 mask_t = torch.as_tensor(env.action_mask(), dtype=torch.bool, device=device).unsqueeze(0)
-                a, _ = plan_action(agent, obs_t, mask_t, env, K=K_plan, deterministic=True)
+                # Stochastic eval: with a near-deterministic argmax policy on this env,
+                # K=1 collapses to a single fixed head-ordering across all eval episodes.
+                # Sampling lets the policy's learned distribution interact with per-episode
+                # score feedback in the obs.
+                a, _ = plan_action(agent, obs_t, mask_t, env, K=K_plan, deterministic=False)
                 obs, r, term, trunc, info = env.step(a)
                 running = max(running, info["running_max"])
                 curves[ep, t] = running
@@ -220,6 +225,7 @@ def main(args: Args | None = None) -> None:
     for update in range(1, n_updates + 1):
         if args.anneal_lr:
             frac = 1.0 - (update - 1) / n_updates
+            frac = max(frac, args.lr_min_frac)
             for g in optimizer.param_groups:
                 g["lr"] = frac * args.learning_rate
 
