@@ -1,17 +1,19 @@
-"""Phase 5: PPO with best-of-K planning on the FULLY LIVE env.
+"""PPO with model-based planning on the live GPT-2 env.
 
-Each episode gets a fresh induction batch (new seed), so head scores drift
-episode-to-episode. The agent must learn structural priors ("which regions
-of the network tend to matter") rather than memorize a single ranking.
+Each decision step:
+  1. Policy outputs a distribution over the 144 legal heads.
+  2. Sample K candidates from that distribution (without replacement).
+  3. Use the env (= GPT-2) to actually score each candidate.
+  4. Commit to the best-scoring candidate as the executed action.
+  5. Update PPO with (state, executed_action, observed_reward).
 
-Eval uses a held-out band of seeds (>= 10_000_000) so no overlap with training.
+K=1 reduces to vanilla PPO. K>1 is best-of-K model-based planning.
 
-Run:
-    # Vanilla PPO (no planning)
-    python ppo_planning_real.py --plan_k 1 --tag k1 --total_timesteps 50000
+The bias note: best-of-K sampling differs from the policy's own sampling
+distribution, so the PPO update is slightly biased. We accept that — empirically
+showing that K>1 improves the discovery curve is the whole point.
 
-    # Model-based planning (best-of-5)
-    python ppo_planning_real.py --plan_k 5 --tag k5 --total_timesteps 50000
+Eval is dense (every 1000 steps) so the learning trend is visible.
 """
 
 from __future__ import annotations
@@ -28,40 +30,34 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.distributions.categorical import Categorical
 
-from head_env_real import RealHeadDiscoveryEnv
+from head_env_live import LiveHeadDiscoveryEnv
 
 
-# ---------------- args ----------------
+# --------------------------------------------------- args + network
 
 @dataclass
 class Args:
     seed: int = 1
-    total_timesteps: int = 50_000
+    total_timesteps: int = 20_000      # smaller — env is real and slow on miss
     learning_rate: float = 2.5e-4
-    num_steps: int = 50                  # = episode length, so 1 update = 1 episode
+    num_steps: int = 50                # = episode length
     gamma: float = 0.99
     gae_lambda: float = 0.95
     num_minibatches: int = 4
     update_epochs: int = 4
     clip_coef: float = 0.2
-    ent_coef: float = 0.05            # higher: avoid early collapse on stochastic env
+    ent_coef: float = 0.01
     vf_coef: float = 0.5
     max_grad_norm: float = 0.5
     norm_adv: bool = True
     anneal_lr: bool = True
-    lr_min_frac: float = 0.2          # don't anneal LR all the way to 0
 
-    plan_k: int = 5                       # 1 = vanilla PPO, >1 = best-of-K planning
-    n_test_seqs: int = 32                 # induction batch size per ablation
-    seq_len: int = 60
-
-    eval_every: int = 2_000
+    plan_k: int = 5                    # candidates considered per decision (1 = no planning)
+    eval_every: int = 1_000
     eval_episodes: int = 10
-    eval_seed_base: int = 10_000_000      # held-out seed band
 
-    tag: str = "k5"
+    tag: str = "k5"                    # used in output filenames
     out_dir: Path = field(default_factory=lambda: Path(__file__).parent / "results")
-    device: str = ""                       # "" -> auto (cuda if available)
 
     @property
     def batch_size(self) -> int:
@@ -72,8 +68,6 @@ class Args:
         return self.batch_size // self.num_minibatches
 
 
-# ---------------- network ----------------
-
 def layer_init(layer, std=np.sqrt(2), bias_const=0.0):
     nn.init.orthogonal_(layer.weight, std)
     nn.init.constant_(layer.bias, bias_const)
@@ -81,7 +75,7 @@ def layer_init(layer, std=np.sqrt(2), bias_const=0.0):
 
 
 class ActorCritic(nn.Module):
-    def __init__(self, obs_dim: int, n_actions: int, hidden: int = 256):
+    def __init__(self, obs_dim: int, n_actions: int, hidden: int = 128):
         super().__init__()
         self.trunk = nn.Sequential(
             layer_init(nn.Linear(obs_dim, hidden)),
@@ -107,126 +101,108 @@ class ActorCritic(nn.Module):
         return dist.log_prob(action), dist.entropy(), self.value(obs)
 
 
-# ---------------- planner ----------------
+# --------------------------------------------------- planner
 
-def plan_action(agent, obs_t, mask_t, env, K, deterministic=False):
+def plan_action(
+    agent: ActorCritic,
+    obs_t: torch.Tensor,
+    mask_t: torch.Tensor,
+    env: LiveHeadDiscoveryEnv,
+    K: int,
+    deterministic: bool = False,
+) -> tuple[int, float]:
+    """Propose K candidates from the policy, score each via the env, pick best.
+
+    Returns (executed_action, executed_score). Score lookups are cached so K>1
+    is cheap after warm-up.
+    """
     dist = agent.distribution(obs_t, mask_t)
-    n_legal = int(mask_t.sum().item())
-    k_eff = min(K, n_legal)
-    if k_eff == 0:
-        a = int(torch.argmax(mask_t.float()).item())
-        return a, env.query_score(a)
     if K == 1:
         action = dist.probs.argmax(dim=-1) if deterministic else dist.sample()
         a = int(action.item())
+        # We don't pre-evaluate K=1; the env.step in the caller computes it.
+        # But we DO query here so that planning and non-planning code paths are
+        # symmetric, and the cache absorbs the cost.
         return a, env.query_score(a)
+
+    # K candidates without replacement, sampled (or top-K logits if deterministic)
     if deterministic:
-        cand = dist.probs[0].topk(k_eff).indices.cpu().tolist()
+        cand = dist.probs[0].topk(min(K, int(mask_t.sum().item()))).indices.cpu().tolist()
     else:
+        cand_set: list[int] = []
         probs = dist.probs[0].clone()
-        cand = []
-        for _ in range(k_eff):
+        for _ in range(min(K, int(mask_t.sum().item()))):
             a = int(torch.multinomial(probs, 1).item())
-            cand.append(a)
+            cand_set.append(a)
             probs[a] = 0.0
             if probs.sum() == 0:
                 break
+        cand = cand_set
+
     scores = [env.query_score(a) for a in cand]
-    best = int(np.argmax(scores))
-    return cand[best], scores[best]
+    best_idx = int(np.argmax(scores))
+    return cand[best_idx], scores[best_idx]
 
 
-# ---------------- eval ----------------
+# --------------------------------------------------- eval
 
-def evaluate_policy(agent, env, n_episodes, device, K_plan, seed_base):
+def evaluate_policy(agent, env, n_episodes, device, K_plan):
     agent.eval()
     n_steps = env.max_steps
     curves = np.zeros((n_episodes, n_steps), dtype=np.float32)
-    baselines = []
-    final_rmax = []
+    top1_idx = max(env._cache, key=env._cache.get) if env._cache else None
+    top1_score = env._cache[top1_idx] if top1_idx is not None else None
+    top1_hits = 0
+    steps_to_top1 = []
     with torch.no_grad():
         for ep in range(n_episodes):
-            obs, info = env.reset(seed=seed_base + ep)
-            baselines.append(info["baseline"])
+            obs, _ = env.reset(seed=10_000 + ep)
             running = -np.inf
+            found_step = None
             for t in range(n_steps):
                 obs_t = torch.as_tensor(obs, dtype=torch.float32, device=device).unsqueeze(0)
                 mask_t = torch.as_tensor(env.action_mask(), dtype=torch.bool, device=device).unsqueeze(0)
-                # Stochastic eval: with a near-deterministic argmax policy on this env,
-                # K=1 collapses to a single fixed head-ordering across all eval episodes.
-                # Sampling lets the policy's learned distribution interact with per-episode
-                # score feedback in the obs.
-                a, _ = plan_action(agent, obs_t, mask_t, env, K=K_plan, deterministic=False)
+                a, _ = plan_action(agent, obs_t, mask_t, env, K=K_plan, deterministic=True)
                 obs, r, term, trunc, info = env.step(a)
+                if top1_idx is not None and a == top1_idx and found_step is None:
+                    found_step = t + 1
                 running = max(running, info["running_max"])
                 curves[ep, t] = running
                 if term or trunc:
                     break
-            final_rmax.append(running)
+            if found_step is not None:
+                top1_hits += 1
+                steps_to_top1.append(found_step)
     agent.train()
     return {
         "curves": curves,
         "mean_curve": curves.mean(axis=0),
-        "mean_baseline": float(np.mean(baselines)),
-        "mean_final_rmax": float(np.mean(final_rmax)),
+        "top1_rate": top1_hits / n_episodes,
+        "median_steps_to_top1": float(np.median(steps_to_top1)) if steps_to_top1 else None,
+        "top1_idx": top1_idx,
+        "top1_score": top1_score,
     }
 
 
-def oracle_eval(env, n_episodes, seed_base):
-    """For each episode, ablate ALL heads and record the true best-head score.
-    This is the ceiling any policy could possibly reach.
-    Cost: n_episodes * n_actions forward passes."""
-    n_actions = env.n_actions
-    per_ep_best = []
-    per_ep_best_action = []
-    all_scores = np.zeros((n_episodes, n_actions), dtype=np.float32)
-    for ep in range(n_episodes):
-        env.reset(seed=seed_base + ep)
-        scores = np.zeros(n_actions, dtype=np.float32)
-        for a in range(n_actions):
-            scores[a] = env.query_score(a)
-        best_a = int(np.argmax(scores))
-        per_ep_best.append(float(scores[best_a]))
-        per_ep_best_action.append(best_a)
-        all_scores[ep] = scores
-    return {
-        "mean_oracle_best": float(np.mean(per_ep_best)),
-        "per_episode_best": per_ep_best,
-        "per_episode_best_action": per_ep_best_action,
-        "all_scores": all_scores,
-    }
-
-
-# ---------------- main ----------------
+# --------------------------------------------------- main
 
 def main(args: Args | None = None) -> None:
     args = args or Args()
-    args.out_dir.mkdir(exist_ok=True, parents=True)
+    args.out_dir.mkdir(exist_ok=True)
 
     random.seed(args.seed)
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
-    if torch.cuda.is_available():
-        torch.cuda.manual_seed_all(args.seed)
+    device = torch.device("cpu")
 
-    device_str = args.device or ("cuda" if torch.cuda.is_available() else "cpu")
-    device = torch.device(device_str)
-    print(f"[setup] device = {device}", flush=True)
-
-    env = RealHeadDiscoveryEnv(
-        n_test_seqs=args.n_test_seqs, seq_len=args.seq_len, device=device_str, verbose=True
-    )
-    eval_env = env   # share model
-
+    env = LiveHeadDiscoveryEnv()
+    eval_env = env   # share the model and cache
     obs_dim = env.observation_space.shape[0]
     n_actions = int(env.action_space.n)
-    print(f"[setup] env: obs_dim={obs_dim}, n_actions={n_actions}, "
-          f"episode_len={env.max_steps}, K_plan={args.plan_k}", flush=True)
-    print(f"[setup] total_timesteps={args.total_timesteps}, eval_every={args.eval_every}", flush=True)
+    print(f"\n[train] env={obs_dim}d obs, {n_actions} actions, episode={env.max_steps}, K_plan={args.plan_k}")
 
     agent = ActorCritic(obs_dim, n_actions).to(device)
     optimizer = optim.Adam(agent.parameters(), lr=args.learning_rate, eps=1e-5)
-    print(f"[setup] policy params = {sum(p.numel() for p in agent.parameters())}", flush=True)
 
     obs_buf = torch.zeros((args.num_steps, obs_dim), device=device)
     mask_buf = torch.zeros((args.num_steps, n_actions), dtype=torch.bool, device=device)
@@ -242,30 +218,34 @@ def main(args: Args | None = None) -> None:
     next_done = torch.zeros(1, device=device)
 
     n_updates = args.total_timesteps // args.num_steps
-    global_step = 0
     eval_history = []
+    global_step = 0
     start = time.time()
     next_eval = 0
 
     for update in range(1, n_updates + 1):
         if args.anneal_lr:
             frac = 1.0 - (update - 1) / n_updates
-            frac = max(frac, args.lr_min_frac)
             for g in optimizer.param_groups:
                 g["lr"] = frac * args.learning_rate
 
-        ep_returns, ep_rmax = [], []
+        ep_returns = []
+        ep_running_max = []
         ep_return = 0.0
         for t in range(args.num_steps):
             global_step += 1
             obs_buf[t] = next_obs
             mask_buf[t] = next_mask
             done_buf[t] = next_done
+
             with torch.no_grad():
+                # Planning: propose K, env scores each, pick best
                 a, _ = plan_action(agent, next_obs.unsqueeze(0), next_mask.unsqueeze(0),
                                    env, K=args.plan_k, deterministic=False)
+                # Re-evaluate to grab log_prob and value under current policy
                 log_prob, _, value = agent.evaluate(
-                    next_obs.unsqueeze(0), next_mask.unsqueeze(0),
+                    next_obs.unsqueeze(0),
+                    next_mask.unsqueeze(0),
                     torch.tensor([a], device=device),
                 )
             act_buf[t] = a
@@ -281,7 +261,7 @@ def main(args: Args | None = None) -> None:
             next_done = torch.tensor([1.0 if done else 0.0], device=device)
             if done:
                 ep_returns.append(ep_return)
-                ep_rmax.append(info["running_max"])
+                ep_running_max.append(info["running_max"])
                 ep_return = 0.0
                 obs_np, _ = env.reset()
                 next_obs = torch.as_tensor(obs_np, dtype=torch.float32, device=device)
@@ -325,70 +305,51 @@ def main(args: Args | None = None) -> None:
                 optimizer.step()
 
         if global_step >= next_eval:
-            ev = evaluate_policy(agent, eval_env, args.eval_episodes, device,
-                                 K_plan=args.plan_k, seed_base=args.eval_seed_base)
+            ev = evaluate_policy(agent, eval_env, args.eval_episodes, device, K_plan=args.plan_k)
             mean_ret = float(np.mean(ep_returns)) if ep_returns else float("nan")
-            mean_rmax = float(np.mean(ep_rmax)) if ep_rmax else float("nan")
+            mean_rmax = float(np.mean(ep_running_max)) if ep_running_max else float("nan")
             eval_history.append(
                 {
                     "step": global_step,
-                    "train_mean_running_max": mean_rmax,
-                    "eval_mean_running_max": ev["mean_final_rmax"],
-                    "eval_mean_baseline": ev["mean_baseline"],
-                    "fwd_calls": env.fwd_calls,
-                    "elapsed_sec": time.time() - start,
+                    "top1_rate": ev["top1_rate"],
+                    "median_steps_to_top1": ev["median_steps_to_top1"],
+                    "final_running_max_mean": float(ev["mean_curve"][-1]),
+                    "cache_misses": env.cache_misses,
                 }
             )
             print(
-                f"[train] step {global_step:6d}  train_rmax={mean_rmax:5.2f}  "
-                f"eval_rmax={ev['mean_final_rmax']:5.2f}  "
-                f"eval_base={ev['mean_baseline']:5.2f}  fwd={env.fwd_calls}  "
+                f"[train] step {global_step:5d}  train_ret={mean_ret:6.2f}  train_rmax={mean_rmax:5.2f}  "
+                f"eval_top1={ev['top1_rate']*100:5.1f}%  eval_rmax={ev['mean_curve'][-1]:.3f}  "
+                f"misses={env.cache_misses}/{env.n_actions}  "
                 f"elapsed={time.time()-start:.0f}s",
                 flush=True,
             )
+            env.save_cache()
             next_eval += args.eval_every
 
-    # Final eval (more episodes)
-    final = evaluate_policy(agent, eval_env, n_episodes=50, device=device,
-                            K_plan=args.plan_k, seed_base=args.eval_seed_base)
-
-    # Oracle eval: per-episode TRUE best-head ceiling. Tells us whether the
-    # agent's plateau is the actual ceiling (no headroom) or a local optimum.
-    print(f"[oracle] computing per-episode best (n=10, will cost ~{10*env.n_actions} fwd calls)...",
-          flush=True)
-    oracle_t0 = time.time()
-    oracle = oracle_eval(eval_env, n_episodes=10, seed_base=args.eval_seed_base)
-    print(f"[oracle] mean_best={oracle['mean_oracle_best']:.3f}  "
-          f"agent_eval_rmax={final['mean_final_rmax']:.3f}  "
-          f"gap={oracle['mean_oracle_best']-final['mean_final_rmax']:.3f}  "
-          f"({time.time()-oracle_t0:.0f}s)", flush=True)
-    np.save(args.out_dir / f"real_{args.tag}_oracle_scores.npy", oracle["all_scores"])
-
-    np.save(args.out_dir / f"real_{args.tag}_curves.npy", final["curves"])
-    with open(args.out_dir / f"real_{args.tag}_summary.json", "w") as f:
+    # Final eval
+    final = evaluate_policy(agent, eval_env, n_episodes=30, device=device, K_plan=args.plan_k)
+    np.save(args.out_dir / f"ppo_planning_{args.tag}_curves.npy", final["curves"])
+    with open(args.out_dir / f"ppo_planning_{args.tag}_summary.json", "w") as f:
         json.dump(
             {
                 "tag": args.tag,
                 "plan_k": args.plan_k,
                 "total_timesteps": args.total_timesteps,
-                "n_test_seqs": args.n_test_seqs,
-                "final_eval_mean_running_max": final["mean_final_rmax"],
-                "final_eval_mean_baseline": final["mean_baseline"],
-                "oracle_mean_best": oracle["mean_oracle_best"],
-                "oracle_per_episode_best": oracle["per_episode_best"],
-                "oracle_per_episode_best_action": oracle["per_episode_best_action"],
-                "fwd_calls_total": env.fwd_calls,
-                "wall_time_sec": time.time() - start,
+                "final_top1_rate": final["top1_rate"],
+                "final_median_steps_to_top1": final["median_steps_to_top1"],
+                "final_mean_running_max": float(final["mean_curve"][-1]),
                 "eval_history": eval_history,
-                "device": str(device),
+                "cache_misses_total": env.cache_misses,
+                "cache_size_final": len(env._cache),
             },
             f,
             indent=2,
         )
-    # Save policy too — useful for downstream analysis / Phase 6
-    torch.save(agent.state_dict(), args.out_dir / f"real_{args.tag}_policy.pt")
-    print(f"\n[done] tag={args.tag}  final_eval_rmax={final['mean_final_rmax']:.3f}  "
-          f"fwd_calls={env.fwd_calls}  wall={time.time()-start:.0f}s")
+    env.save_cache()
+    print(f"\n[done] tag={args.tag}  top1={final['top1_rate']*100:.1f}%  "
+          f"median_steps_to_top1={final['median_steps_to_top1']}  "
+          f"final_rmax={final['mean_curve'][-1]:.3f}  cache_misses={env.cache_misses}")
 
 
 if __name__ == "__main__":

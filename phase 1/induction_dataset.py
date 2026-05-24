@@ -130,4 +130,8 @@ if __name__ == "__main__":
     target_positions = target_positions.to(device)
 
     baseline = induction_loss(model, tokens, target_positions)
-    print(f"Baseline induction loss: {baseline:.4f}")
+    print(f"Baseline induction CE loss: {baseline:.4f}")
+
+    distractors = make_distractor_tokens(model, tokens, seed=1).to(device)
+    diff = induction_logit_diff(model, tokens, target_positions, distractors)
+    print(f"Baseline induction logit-diff (correct - distractor): {diff:.4f}")

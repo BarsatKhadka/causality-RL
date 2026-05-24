@@ -1,0 +1,17 @@
+{
+  "random": {
+    "final_rmax_mean": 2.401688575744629
+  },
+  "k1": {
+    "final_rmax_mean": 3.05926251411438,
+    "final_top1_rate": 1.0,
+    "final_median_steps_to_top1": 2.0,
+    "cache_misses_total": 0
+  },
+  "k5": {
+    "final_rmax_mean": 3.05926251411438,
+    "final_top1_rate": 1.0,
+    "final_median_steps_to_top1": 1.0,
+    "cache_misses_total": 0
+  }
+}
