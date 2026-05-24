@@ -31,6 +31,7 @@ sys.path.insert(0, str(PHASE1))
 from induction_dataset import (  # noqa: E402
     control_mean_loss,
     induction_logit_diff,
+    load_natural_corpus,
     make_control_batch,
     make_distractor_tokens,
     make_induction_batch,
@@ -83,6 +84,14 @@ class RealHeadDiscoveryEnv(gym.Env):
         if self.verbose:
             print(f"[env] model loaded in {time.time()-t0:.1f}s", flush=True)
 
+        # Pre-load the natural-text corpus once. The control batch sampler
+        # picks random spans from this on every reset.
+        t0 = time.time()
+        self._corpus_tokens = load_natural_corpus(self.model)
+        if self.verbose:
+            print(f"[env] loaded natural corpus ({self._corpus_tokens.shape[0]} tokens) "
+                  f"in {time.time()-t0:.1f}s", flush=True)
+
         self.n_layers = int(self.model.cfg.n_layers)
         self.n_heads_per_layer = int(self.model.cfg.n_heads)
         self.n_actions = self.n_layers * self.n_heads_per_layer
@@ -129,7 +138,11 @@ class RealHeadDiscoveryEnv(gym.Env):
         # Paired control batch — random-token sequences with no induction structure.
         # Different seed offset to keep control independent of the induction batch.
         self._control_tokens = make_control_batch(
-            self.model, batch_size=self.n_test_seqs, seq_len=self.seq_len, seed=seed + 13_103
+            self.model,
+            batch_size=self.n_test_seqs,
+            seq_len=self.seq_len,
+            seed=seed + 13_103,
+            corpus=self._corpus_tokens,
         ).to(self.device)
         self._control_baseline_loss = control_mean_loss(self.model, self._control_tokens)
 

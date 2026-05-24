@@ -119,26 +119,68 @@ def make_distractor_tokens(
     return distractors.to(tokens.device)
 
 
+_NATURAL_CORPUS_CACHE: dict[tuple[str, int], torch.Tensor] = {}
+
+
+def load_natural_corpus(
+    model: HookedTransformer,
+    n_tokens: int = 200_000,
+    cache_key: str = "wikitext-2",
+) -> torch.Tensor:
+    """Tokenize a slice of natural English text into one long token tensor.
+
+    Cached per-process. The control batch sampler picks random sub-spans from
+    this tensor, so ablations are scored against text where previous-token
+    heads, attention patterns, and general syntax all matter — unlike random
+    tokens, where they don't.
+    """
+    key = (cache_key, n_tokens)
+    if key in _NATURAL_CORPUS_CACHE:
+        return _NATURAL_CORPUS_CACHE[key]
+    try:
+        from datasets import load_dataset  # type: ignore
+        ds = load_dataset("wikitext", "wikitext-2-raw-v1", split="train")
+        text = "\n".join(t for t in ds["text"] if t.strip())[: n_tokens * 8]
+    except Exception:
+        # Fallback: a hardcoded English paragraph repeated. Crude but real text.
+        # Used if the HPC node has no internet for datasets / no datasets pkg.
+        text = (
+            "The agent learns by interacting with the environment. Each action "
+            "produces feedback used to update the policy. Over many episodes, "
+            "the agent gradually improves. Reinforcement learning is the study "
+            "of how agents ought to take actions to maximize cumulative reward. "
+            "Language models predict the next token given the preceding context. "
+        ) * 4000
+    toks = model.to_tokens(text, prepend_bos=False)[0][:n_tokens]
+    _NATURAL_CORPUS_CACHE[key] = toks
+    return toks
+
+
 def make_control_batch(
     model: HookedTransformer,
     batch_size: int = 32,
     seq_len: int = 60,
     seed: int = 0,
+    corpus: torch.Tensor | None = None,
 ) -> torch.Tensor:
-    """Generate a batch of random-token sequences with NO induction pattern.
+    """Sample a batch of natural-text token spans for the contrastive control.
 
-    Used as a contrastive control: ablating a head that does general computation
-    (e.g. early-layer token-mixing) will hurt the model's predictions on this
-    batch about as much as it hurts induction. Ablating an *induction-specific*
-    head should hurt induction much more than this control. The reward function
-    subtracts control-damage from induction-damage to isolate induction-specific
-    heads from generally-important heads.
+    If `corpus` is None, lazily loads wikitext via `load_natural_corpus`.
+    Picks `batch_size` random starting positions, takes `seq_len-1` tokens from
+    each, and prepends BOS. Used as a stronger contrastive baseline than
+    random tokens, because previous-token heads and general syntax matter here.
     """
+    if corpus is None:
+        corpus = load_natural_corpus(model)
     g = torch.Generator().manual_seed(seed)
-    vocab_size = model.cfg.d_vocab
-    bos = torch.full((batch_size, 1), model.tokenizer.bos_token_id or 50256, dtype=torch.long)
-    body = torch.randint(10, vocab_size, (batch_size, seq_len - 1), generator=g)
-    return torch.cat([bos, body], dim=1)
+    max_start = corpus.shape[0] - (seq_len - 1) - 1
+    starts = torch.randint(0, max_start, (batch_size,), generator=g)
+    bos_id = model.tokenizer.bos_token_id or 50256
+    out = torch.empty((batch_size, seq_len), dtype=torch.long)
+    out[:, 0] = bos_id
+    for i, s in enumerate(starts.tolist()):
+        out[i, 1:] = corpus[s : s + seq_len - 1]
+    return out
 
 
 def control_mean_loss(
