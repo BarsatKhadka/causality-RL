@@ -1,0 +1,6 @@
+{
+  "metric": "logit_diff_drop",
+  "baseline_logit_diff": 8.9789400100708,
+  "n_layers": 12,
+  "n_heads": 12
+}
