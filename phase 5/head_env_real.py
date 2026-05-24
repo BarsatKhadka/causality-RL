@@ -29,11 +29,16 @@ from gymnasium import spaces
 PHASE1 = Path(__file__).parents[1] / "phase 1"
 sys.path.insert(0, str(PHASE1))
 from induction_dataset import (  # noqa: E402
+    control_mean_loss,
     induction_logit_diff,
+    make_control_batch,
     make_distractor_tokens,
     make_induction_batch,
 )
-from ablation import logit_diff_with_head_ablated  # noqa: E402
+from ablation import (  # noqa: E402
+    control_loss_with_head_ablated,
+    logit_diff_with_head_ablated,
+)
 
 from transformer_lens import HookedTransformer  # noqa: E402
 
@@ -42,6 +47,9 @@ REPICK_PENALTY = -1.0
 # Score normalization: divide tried-head rewards by this so the obs channel
 # lives in roughly [0, 1.5]. Picked from observed baselines (~9.5).
 SCORE_SCALE = 10.0
+# Contrastive reward weight: reward = induction_damage - CONTROL_WEIGHT * control_damage.
+# 1.0 means equal weighting; higher penalizes generally-important heads more.
+CONTROL_WEIGHT = 1.0
 
 
 class RealHeadDiscoveryEnv(gym.Env):
@@ -91,6 +99,8 @@ class RealHeadDiscoveryEnv(gym.Env):
         self._target_positions = None
         self._distractors = None
         self._baseline = 0.0
+        self._control_tokens = None
+        self._control_baseline_loss = 0.0
         self._episode_cache: dict[int, float] = {}
         self._tried_mask: Optional[np.ndarray] = None
         self._score_vec: Optional[np.ndarray] = None
@@ -104,7 +114,8 @@ class RealHeadDiscoveryEnv(gym.Env):
     # ---------------- per-episode batch ----------------
 
     def _resample_batch(self, seed: int) -> None:
-        """Generate a fresh induction batch using `seed`. Recomputes baseline."""
+        """Generate a fresh induction batch + paired control batch using `seed`.
+        Recomputes both baselines (induction logit-diff + control CE loss)."""
         tokens, tp = make_induction_batch(
             self.model, batch_size=self.n_test_seqs, seq_len=self.seq_len, seed=seed
         )
@@ -115,11 +126,27 @@ class RealHeadDiscoveryEnv(gym.Env):
         self._baseline = induction_logit_diff(
             self.model, self._tokens, self._target_positions, self._distractors
         )
+        # Paired control batch — random-token sequences with no induction structure.
+        # Different seed offset to keep control independent of the induction batch.
+        self._control_tokens = make_control_batch(
+            self.model, batch_size=self.n_test_seqs, seq_len=self.seq_len, seed=seed + 13_103
+        ).to(self.device)
+        self._control_baseline_loss = control_mean_loss(self.model, self._control_tokens)
 
     # ---------------- core ----------------
 
     def query_score(self, action: int) -> float:
-        """Real GPT-2 ablation score for the current episode's batch."""
+        """Real GPT-2 ablation score (contrastive: induction-specific damage).
+
+        reward = (baseline_logit_diff - ablated_logit_diff)
+                 - CONTROL_WEIGHT * (ablated_control_loss - baseline_control_loss)
+
+        First term: how much ablating this head hurt induction.
+        Second term: how much it hurt general next-token prediction.
+        Heads that hurt only induction get high reward; heads that hurt the model
+        in general (e.g. early-layer token-mixing heads) get reward near 0 or
+        negative, even if induction logit-diff dropped.
+        """
         action = int(action)
         if action in self._episode_cache:
             return self._episode_cache[action]
@@ -127,9 +154,15 @@ class RealHeadDiscoveryEnv(gym.Env):
         ablated = logit_diff_with_head_ablated(
             self.model, self._tokens, self._target_positions, self._distractors, layer, head
         )
-        score = float(self._baseline - ablated)
+        ablated_control_loss = control_loss_with_head_ablated(
+            self.model, self._control_tokens, layer, head
+        )
+        induction_damage = float(self._baseline - ablated)
+        control_damage = float(ablated_control_loss - self._control_baseline_loss)
+        score = induction_damage - CONTROL_WEIGHT * control_damage
         self._episode_cache[action] = score
-        self._fwd_calls += 1
+        # Two forward passes per query now (induction batch + control batch).
+        self._fwd_calls += 2
         return score
 
     @property
@@ -187,6 +220,7 @@ class RealHeadDiscoveryEnv(gym.Env):
             "repicked": repicked,
             "episode_seed": self._episode_seed,
             "baseline": float(self._baseline),
+            "control_baseline": float(self._control_baseline_loss),
         }
 
 

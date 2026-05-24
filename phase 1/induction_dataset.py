@@ -119,6 +119,50 @@ def make_distractor_tokens(
     return distractors.to(tokens.device)
 
 
+def make_control_batch(
+    model: HookedTransformer,
+    batch_size: int = 32,
+    seq_len: int = 60,
+    seed: int = 0,
+) -> torch.Tensor:
+    """Generate a batch of random-token sequences with NO induction pattern.
+
+    Used as a contrastive control: ablating a head that does general computation
+    (e.g. early-layer token-mixing) will hurt the model's predictions on this
+    batch about as much as it hurts induction. Ablating an *induction-specific*
+    head should hurt induction much more than this control. The reward function
+    subtracts control-damage from induction-damage to isolate induction-specific
+    heads from generally-important heads.
+    """
+    g = torch.Generator().manual_seed(seed)
+    vocab_size = model.cfg.d_vocab
+    bos = torch.full((batch_size, 1), model.tokenizer.bos_token_id or 50256, dtype=torch.long)
+    body = torch.randint(10, vocab_size, (batch_size, seq_len - 1), generator=g)
+    return torch.cat([bos, body], dim=1)
+
+
+def control_mean_loss(
+    model: HookedTransformer,
+    tokens: torch.Tensor,
+) -> float:
+    """Mean next-token cross-entropy across non-BOS positions on the control batch.
+
+    A clean GPT-2 small gets ~6-9 on random tokens (high because tokens are
+    unpredictable random ints). Ablating a generally-important head pushes this
+    up substantially; ablating an induction-specific head barely moves it.
+    """
+    with torch.no_grad():
+        logits = model(tokens, return_type="logits")  # [B, T, V]
+    shift_logits = logits[:, :-1, :].contiguous()
+    shift_targets = tokens[:, 1:].contiguous()
+    loss = torch.nn.functional.cross_entropy(
+        shift_logits.reshape(-1, shift_logits.size(-1)),
+        shift_targets.reshape(-1),
+        reduction="mean",
+    )
+    return loss.item()
+
+
 if __name__ == "__main__":
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print(f"Loading GPT-2 small on {device}...")
