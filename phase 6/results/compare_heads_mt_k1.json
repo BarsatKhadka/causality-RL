@@ -1,0 +1,313 @@
+{
+  "tag": "mt_k1",
+  "policy_path": "results/phase6_mt_k1_policy.pt",
+  "induction": {
+    "policy_mean_rmax": 3.40787787437439,
+    "oracle_mean_best": 3.4020962715148926,
+    "policy_top_picks": [
+      [
+        22,
+        20
+      ],
+      [
+        14,
+        20
+      ],
+      [
+        7,
+        20
+      ],
+      [
+        90,
+        20
+      ],
+      [
+        30,
+        20
+      ],
+      [
+        16,
+        20
+      ],
+      [
+        79,
+        20
+      ],
+      [
+        36,
+        20
+      ],
+      [
+        74,
+        20
+      ],
+      [
+        9,
+        20
+      ]
+    ],
+    "policy_top_rmax_actions": [
+      [
+        22,
+        15
+      ],
+      [
+        9,
+        5
+      ]
+    ],
+    "oracle_top10_by_mean": [
+      22,
+      9,
+      65,
+      7,
+      36,
+      10,
+      132,
+      27,
+      14,
+      30
+    ],
+    "canonical_set": [
+      [
+        5,
+        5
+      ],
+      [
+        7,
+        2
+      ],
+      [
+        7,
+        10
+      ],
+      [
+        6,
+        9
+      ],
+      [
+        5,
+        1
+      ]
+    ],
+    "overlap_policy_top5": 0,
+    "overlap_policy_top10": 0,
+    "overlap_oracle_top5": 1,
+    "overlap_oracle_top10": 1,
+    "n_canonical": 5
+  },
+  "ioi": {
+    "policy_mean_rmax": 2.9759368523955345,
+    "oracle_mean_best": 2.9479122400283813,
+    "policy_top_picks": [
+      [
+        106,
+        20
+      ],
+      [
+        9,
+        20
+      ],
+      [
+        46,
+        20
+      ],
+      [
+        69,
+        20
+      ],
+      [
+        102,
+        20
+      ],
+      [
+        27,
+        20
+      ],
+      [
+        15,
+        20
+      ],
+      [
+        20,
+        20
+      ],
+      [
+        35,
+        20
+      ],
+      [
+        126,
+        20
+      ]
+    ],
+    "policy_top_rmax_actions": [
+      [
+        9,
+        20
+      ]
+    ],
+    "oracle_top10_by_mean": [
+      9,
+      102,
+      106,
+      69,
+      15,
+      93,
+      132,
+      65,
+      126,
+      35
+    ],
+    "canonical_set": [
+      [
+        9,
+        0
+      ],
+      [
+        9,
+        9
+      ],
+      [
+        9,
+        6
+      ],
+      [
+        8,
+        10
+      ],
+      [
+        7,
+        3
+      ],
+      [
+        7,
+        9
+      ],
+      [
+        11,
+        2
+      ],
+      [
+        10,
+        0
+      ],
+      [
+        10,
+        6
+      ],
+      [
+        8,
+        6
+      ],
+      [
+        9,
+        7
+      ],
+      [
+        10,
+        2
+      ]
+    ],
+    "overlap_policy_top5": 2,
+    "overlap_policy_top10": 3,
+    "overlap_oracle_top5": 2,
+    "overlap_oracle_top10": 4,
+    "n_canonical": 12
+  },
+  "docstring": {
+    "policy_mean_rmax": 2.194808892905712,
+    "oracle_mean_best": 2.1983403086662294,
+    "policy_top_picks": [
+      [
+        0,
+        20
+      ],
+      [
+        74,
+        20
+      ],
+      [
+        9,
+        20
+      ],
+      [
+        27,
+        20
+      ],
+      [
+        132,
+        20
+      ],
+      [
+        30,
+        20
+      ],
+      [
+        22,
+        20
+      ],
+      [
+        90,
+        20
+      ],
+      [
+        78,
+        20
+      ],
+      [
+        36,
+        20
+      ]
+    ],
+    "policy_top_rmax_actions": [
+      [
+        10,
+        20
+      ]
+    ],
+    "oracle_top10_by_mean": [
+      10,
+      1,
+      106,
+      35,
+      69,
+      14,
+      65,
+      95,
+      36,
+      91
+    ],
+    "canonical_set": [
+      [
+        5,
+        0
+      ],
+      [
+        7,
+        7
+      ],
+      [
+        0,
+        5
+      ],
+      [
+        3,
+        6
+      ],
+      [
+        6,
+        1
+      ],
+      [
+        4,
+        7
+      ]
+    ],
+    "overlap_policy_top5": 0,
+    "overlap_policy_top10": 0,
+    "overlap_oracle_top5": 0,
+    "overlap_oracle_top10": 1,
+    "n_canonical": 6
+  }
+}

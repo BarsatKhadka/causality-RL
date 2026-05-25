@@ -1,0 +1,127 @@
+Unloading shared
+  WARNING: Did not unuse /cm/shared/modulefiles
+[start] Mon May 25 10:44:37 AM CDT 2026 compare_heads tag=mt_k1
+[setup] device=cuda
+[setup] loading GPT-2 ...
+Loaded pretrained model gpt2 into HookedTransformer
+[setup] loaded policy: results/phase6_mt_k1_policy.pt
+
+==============================================================================
+TASK: induction   priming=[1.0, 0.0]
+==============================================================================
+
+  Canonical heads (induction): L5.H1, L5.H5, L6.H9, L7.H2, L7.H10  [n=5]
+
+  Policy top-10 most picked   : L1.H10(20) L1.H2(20) L0.H7(20) L7.H6(20) L2.H6(20) L1.H4(20) L6.H7(20) L3.H0(20) L6.H2(20) L0.H9(20)
+  Policy top heads at peak    : L1.H10(15) L0.H9(5)
+  Oracle top-10 by mean score : L1.H10 L0.H9 L5.H5 L0.H7 L3.H0 L0.H10 L11.H0 L2.H3 L1.H2 L2.H6
+
+  Policy mean rmax  : 3.408
+  Oracle mean best  : 3.402
+  Gap (policy-oracle): +0.006
+
+  Overlap with canonical literature (top-5 / top-10):
+    policy : 0/5  | 0/5
+    oracle : 1/5  | 1/5
+
+==============================================================================
+TASK: ioi   priming=[0.0, 1.0]
+==============================================================================
+
+  Canonical heads (ioi): L7.H3, L7.H9, L8.H6, L8.H10, L9.H0, L9.H6, L9.H7, L9.H9, L10.H0, L10.H2, L10.H6, L11.H2  [n=12]
+
+  Policy top-10 most picked   : L8.H10(20) L0.H9(20) L3.H10(20) L5.H9(20) L8.H6(20) L2.H3(20) L1.H3(20) L1.H8(20) L2.H11(20) L10.H6(20)
+  Policy top heads at peak    : L0.H9(20)
+  Oracle top-10 by mean score : L0.H9 L8.H6 L8.H10 L5.H9 L1.H3 L7.H9 L11.H0 L5.H5 L10.H6 L2.H11
+
+  Policy mean rmax  : 2.976
+  Oracle mean best  : 2.948
+  Gap (policy-oracle): +0.028
+
+  Overlap with canonical literature (top-5 / top-10):
+    policy : 2/12  | 3/12
+    oracle : 2/12  | 4/12
+
+==============================================================================
+TASK: docstring   priming=[1.0, 0.0]
+==============================================================================
+
+  Canonical heads (docstring): L0.H5, L3.H6, L4.H7, L5.H0, L6.H1, L7.H7  [n=6]
+
+  Policy top-10 most picked   : L0.H0(20) L6.H2(20) L0.H9(20) L2.H3(20) L11.H0(20) L2.H6(20) L1.H10(20) L7.H6(20) L6.H6(20) L3.H0(20)
+  Policy top heads at peak    : L0.H10(20)
+  Oracle top-10 by mean score : L0.H10 L0.H1 L8.H10 L2.H11 L5.H9 L1.H2 L5.H5 L7.H11 L3.H0 L7.H7
+
+  Policy mean rmax  : 2.195
+  Oracle mean best  : 2.198
+  Gap (policy-oracle): -0.004
+
+  Overlap with canonical literature (top-5 / top-10):
+    policy : 0/6  | 0/6
+    oracle : 0/6  | 1/6
+
+[saved] /ddnlus/barsatkhadka/causality-RL/phase 6/results/compare_heads_mt_k1.json
+[done]  tag=mt_k1
+[start] Mon May 25 10:50:00 AM CDT 2026 compare_heads tag=mt_k5
+[setup] device=cuda
+[setup] loading GPT-2 ...
+Loaded pretrained model gpt2 into HookedTransformer
+[setup] loaded policy: results/phase6_mt_k5_policy.pt
+
+==============================================================================
+TASK: induction   priming=[1.0, 0.0]
+==============================================================================
+
+  Canonical heads (induction): L5.H1, L5.H5, L6.H9, L7.H2, L7.H10  [n=5]
+
+  Policy top-10 most picked   : L1.H10(20) L0.H6(20) L0.H9(20) L0.H10(20) L3.H0(20) L0.H7(20) L3.H2(20) L2.H3(20) L5.H5(20) L2.H9(20)
+  Policy top heads at peak    : L1.H10(15) L0.H9(5)
+  Oracle top-10 by mean score : L1.H10 L0.H9 L5.H5 L0.H7 L3.H0 L0.H10 L11.H0 L2.H3 L1.H2 L2.H6
+
+  Policy mean rmax  : 3.408
+  Oracle mean best  : 3.402
+  Gap (policy-oracle): +0.006
+
+  Overlap with canonical literature (top-5 / top-10):
+    policy : 0/5  | 1/5
+    oracle : 1/5  | 1/5
+
+==============================================================================
+TASK: ioi   priming=[0.0, 1.0]
+==============================================================================
+
+  Canonical heads (ioi): L7.H3, L7.H9, L8.H6, L8.H10, L9.H0, L9.H6, L9.H7, L9.H9, L10.H0, L10.H2, L10.H6, L11.H2  [n=12]
+
+  Policy top-10 most picked   : L0.H9(20) L1.H3(20) L5.H9(20) L8.H6(20) L8.H10(20) L11.H0(20) L3.H0(20) L5.H5(20) L7.H9(19) L1.H8(19)
+  Policy top heads at peak    : L0.H9(20)
+  Oracle top-10 by mean score : L0.H9 L8.H6 L8.H10 L5.H9 L1.H3 L7.H9 L11.H0 L5.H5 L10.H6 L2.H11
+
+  Policy mean rmax  : 2.976
+  Oracle mean best  : 2.948
+  Gap (policy-oracle): +0.028
+
+  Overlap with canonical literature (top-5 / top-10):
+    policy : 2/12  | 3/12
+    oracle : 2/12  | 4/12
+
+==============================================================================
+TASK: docstring   priming=[1.0, 0.0]
+==============================================================================
+
+  Canonical heads (docstring): L0.H5, L3.H6, L4.H7, L5.H0, L6.H1, L7.H7  [n=6]
+
+  Policy top-10 most picked   : L1.H10(20) L0.H6(20) L4.H11(20) L0.H1(20) L0.H9(20) L0.H11(20) L0.H10(20) L2.H9(20) L0.H7(20) L11.H0(20)
+  Policy top heads at peak    : L0.H10(20)
+  Oracle top-10 by mean score : L0.H10 L0.H1 L8.H10 L2.H11 L5.H9 L1.H2 L5.H5 L7.H11 L3.H0 L7.H7
+
+  Policy mean rmax  : 2.195
+  Oracle mean best  : 2.198
+  Gap (policy-oracle): -0.004
+
+  Overlap with canonical literature (top-5 / top-10):
+    policy : 0/6  | 0/6
+    oracle : 0/6  | 1/6
+
+[saved] /ddnlus/barsatkhadka/causality-RL/phase 6/results/compare_heads_mt_k5.json
+[done]  tag=mt_k5
+[end] Mon May 25 10:55:21 AM CDT 2026
