@@ -61,37 +61,52 @@ EVAL_SEED_BASE = 10_000_000
 
 # ---------------- canonical heads from the literature ----------------
 
-# Induction heads in GPT-2 small (Olsson et al. 2022, "In-context Learning and
-# Induction Heads"). These pattern-match A B ... A -> B via QK composition with
-# the previous-token head.
+# ---- Verified canonical sets ----
+#
+# Induction heads in GPT-2 small: the most commonly cited set from Olsson 2022
+# / Elhage 2021 / TransformerLens demos. Wang 2022 (Fig 7) confirms 5.5, 5.8,
+# 5.9, 6.9 as the induction heads active in the IOI circuit.
 CANONICAL_INDUCTION = {
     (5, 1), (5, 5), (6, 9), (7, 2), (7, 10),
 }
 
-# IOI heads in GPT-2 small (Wang et al. 2022). Restricted to the most commonly
-# cited "name mover" + "S-inhibition" sets.
-CANONICAL_IOI = {
-    # Name movers
-    (9, 6), (9, 9), (10, 0),
-    # S-inhibition
-    (7, 3), (7, 9), (8, 6), (8, 10),
-    # Backup name movers (most cited)
-    (9, 0), (9, 7), (10, 2), (10, 6), (11, 2),
-}
+# IOI heads in GPT-2 small (Wang et al. 2022, "Interpretability in the Wild",
+# Figure 7 + Section 3). All heads grouped by sub-role.
+IOI_NAME_MOVERS         = {(9, 6), (9, 9), (10, 0)}
+IOI_NEGATIVE_NMS        = {(10, 7), (11, 10)}
+IOI_S_INHIBITION        = {(7, 3), (7, 9), (8, 6), (8, 10)}
+IOI_BACKUP_NMS          = {(10, 10), (10, 2), (10, 6), (11, 2), (11, 9), (9, 0), (9, 7), (10, 1)}
+IOI_INDUCTION_IN_IOI    = {(5, 5), (5, 8), (5, 9), (6, 9)}
+IOI_DUPLICATE_TOKEN     = {(0, 1), (0, 10), (3, 0)}
+IOI_PREVIOUS_TOKEN      = {(2, 2), (4, 11)}
 
-# Docstring (Heimersheim & Janiak 2023). Conservative list of repeatedly-cited
-# heads. Real circuit also includes "argument mover" heads in mid layers.
-CANONICAL_DOCSTRING = {
-    (4, 7),   # argument mover
-    (3, 6),   # induction-like
-    (0, 5),   # previous token (code context)
-    (5, 0), (6, 1), (7, 7),
-}
+CANONICAL_IOI = (
+    IOI_NAME_MOVERS | IOI_NEGATIVE_NMS | IOI_S_INHIBITION | IOI_BACKUP_NMS
+    | IOI_INDUCTION_IN_IOI | IOI_DUPLICATE_TOKEN | IOI_PREVIOUS_TOKEN
+)
+
+# Docstring: Heimersheim & Janiak 2023 worked on a 4-layer attention-only toy
+# model, NOT GPT-2 small. Their L0-L3 head indices do not correspond to GPT-2
+# heads. We therefore have no published canonical set for the docstring task
+# in GPT-2 small — we report only oracle-vs-policy agreement, not canonical
+# overlap, for that task.
+CANONICAL_DOCSTRING: set = set()
 
 CANONICAL = {
     "induction": CANONICAL_INDUCTION,
     "ioi": CANONICAL_IOI,
     "docstring": CANONICAL_DOCSTRING,
+}
+
+# Sub-categories used to break down IOI overlap in the output.
+IOI_SUBCATS = {
+    "name_movers": IOI_NAME_MOVERS,
+    "negative_NMs": IOI_NEGATIVE_NMS,
+    "s_inhibition": IOI_S_INHIBITION,
+    "backup_NMs": IOI_BACKUP_NMS,
+    "induction_in_ioi": IOI_INDUCTION_IN_IOI,
+    "duplicate_token": IOI_DUPLICATE_TOKEN,
+    "previous_token": IOI_PREVIOUS_TOKEN,
 }
 
 
@@ -258,11 +273,12 @@ def run_oracle(runner, n_episodes):
         per_ep_best_action.append(best)
         per_ep_best_score.append(float(scores_all[ep, best]))
     mean_per_head = scores_all.mean(axis=0)
-    top10 = list(np.argsort(-mean_per_head)[:10])
+    full_order = list(np.argsort(-mean_per_head))
     return {
         "mean_best": float(np.mean(per_ep_best_score)),
         "per_episode_best_action": per_ep_best_action,
-        "top10_by_mean": top10,
+        "top10_by_mean": full_order[:10],
+        "full_order_by_mean": full_order,           # all 144, descending
         "mean_per_head": mean_per_head.tolist(),
     }
 
@@ -290,6 +306,29 @@ def overlap(picked: List[int], canonical: set, k: int) -> Tuple[int, int]:
     top_k = [int(p) for p, _ in picked[:k]] if isinstance(picked[0], tuple) else [int(p) for p in picked[:k]]
     top_lh = {(divmod(p, N_HEADS_PER_LAYER)) for p in top_k}
     return len(top_lh & canonical), len(canonical)
+
+
+def rank_of_canonicals(ordered_actions: List[int], canonical: set) -> Dict[str, int]:
+    """For each canonical (L,H), find its rank in the ordered list.
+    Rank starts at 1. Returns {LX.HY: rank}.  Heads not in the list get rank 145.
+    `ordered_actions` may be a list of ints OR a list of (action, count) pairs."""
+    if not canonical:
+        return {}
+    if ordered_actions and isinstance(ordered_actions[0], (list, tuple)):
+        actions = [int(a) for a, _ in ordered_actions]
+    else:
+        actions = [int(a) for a in ordered_actions]
+    rank_by_action = {a: i + 1 for i, a in enumerate(actions)}
+    out = {}
+    for L, H in canonical:
+        a = L * N_HEADS_PER_LAYER + H
+        out[f"L{L}.H{H}"] = rank_by_action.get(a, N_ACTIONS + 1)
+    return out
+
+
+def fmt_ranks(rank_dict: Dict[str, int]) -> str:
+    items = sorted(rank_dict.items(), key=lambda kv: kv[1])
+    return "  ".join(f"{name}=#{r}" for name, r in items)
 
 
 def main():
@@ -343,6 +382,10 @@ def main():
         ov5_ora, _       = overlap(ora["top10_by_mean"], canon, 5)
         ov10_ora, _      = overlap(ora["top10_by_mean"], canon, 10)
 
+        # Per-canonical-head ranks: where the policy/oracle place each canonical head
+        policy_ranks = rank_of_canonicals(pol["top_picks"], canon)
+        oracle_ranks = rank_of_canonicals(ora["full_order_by_mean"], canon)
+
         print(f"\n  Canonical heads ({task}): {canon_str}  [n={n_canon}]")
         print(f"\n  Policy top-10 most picked   : {fmt_picks(pol['top_picks'], 10)}")
         print(f"  Policy top heads at peak    : {fmt_picks(pol['top_rmax_actions'], 5)}")
@@ -350,9 +393,20 @@ def main():
         print(f"\n  Policy mean rmax  : {pol['mean_rmax']:.3f}")
         print(f"  Oracle mean best  : {ora['mean_best']:.3f}")
         print(f"  Gap (policy-oracle): {pol['mean_rmax'] - ora['mean_best']:+.3f}")
-        print(f"\n  Overlap with canonical literature (top-5 / top-10):")
-        print(f"    policy : {ov5_pol}/{n_canon}  | {ov10_pol}/{n_canon}")
-        print(f"    oracle : {ov5_ora}/{n_canon}  | {ov10_ora}/{n_canon}\n")
+        if n_canon:
+            print(f"\n  Overlap with canonical literature (top-5 / top-10):")
+            print(f"    policy : {ov5_pol}/{n_canon}  | {ov10_pol}/{n_canon}")
+            print(f"    oracle : {ov5_ora}/{n_canon}  | {ov10_ora}/{n_canon}")
+            print(f"\n  Canonical heads — ranking in agent's pick list (1 = most picked):")
+            print(f"    {fmt_ranks(policy_ranks)}")
+            print(f"  Canonical heads — ranking in oracle's mean-score order:")
+            print(f"    {fmt_ranks(oracle_ranks)}")
+        if task == "ioi":
+            print(f"\n  IOI sub-category overlap (policy top-10 vs canon set):")
+            for cat_name, cat_set in IOI_SUBCATS.items():
+                ov, n = overlap(pol["top_picks"], cat_set, 10)
+                print(f"    {cat_name:<20s}: {ov}/{n}")
+        print()
 
         out[task] = {
             "policy_mean_rmax": pol["mean_rmax"],
@@ -366,7 +420,13 @@ def main():
             "overlap_oracle_top5": ov5_ora,
             "overlap_oracle_top10": ov10_ora,
             "n_canonical": n_canon,
+            "canonical_ranks_policy": policy_ranks,
+            "canonical_ranks_oracle": oracle_ranks,
         }
+        if task == "ioi":
+            out[task]["ioi_subcat_overlap_policy"] = {
+                cat: overlap(pol["top_picks"], cs, 10)[0] for cat, cs in IOI_SUBCATS.items()
+            }
 
     summary_path = out_dir / f"compare_heads_{args.tag}.json"
     with open(summary_path, "w") as f:
