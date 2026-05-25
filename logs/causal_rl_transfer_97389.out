@@ -1,0 +1,38 @@
+Unloading shared
+  WARNING: Did not unuse /cm/shared/modulefiles
+[start] Mon May 25 09:34:35 AM CDT 2026 transfer eval tag=mt_k1 policy=results/phase6_mt_k1_policy.pt
+[setup] device=cuda
+[setup] loading GPT-2 ...
+Loaded pretrained model gpt2 into HookedTransformer
+[setup] loaded policy from results/phase6_mt_k1_policy.pt
+
+[1/5] random baseline on docstring ...
+      mean_rmax=1.395  (81s)
+
+[*] trained policy (task_onehot=[0, 0], 'unknown') ...
+      mean_rmax=1.467  (77s)
+      top heads that achieved per-ep max: L0.H10:11 L8.H10:10 L5.H9:5 L2.H11:3 L5.H5:1
+      most-picked overall:               L11.H0:30 L0.H9:30 L2.H6:30 L6.H2:30 L3.H0:30 L2.H3:30 L5.H5:30 L10.H6:30 L1.H1:30 L6.H9:29
+
+[*] trained policy (task_onehot=[1, 0], 'pretend_induction') ...
+      mean_rmax=2.178  (75s)
+      top heads that achieved per-ep max: L0.H10:29 L2.H11:1
+      most-picked overall:               L1.H10:30 L0.H7:30 L7.H6:30 L1.H2:30 L0.H9:30 L2.H6:30 L6.H6:30 L0.H0:30 L2.H3:30 L6.H2:30
+
+[*] trained policy (task_onehot=[0, 1], 'pretend_ioi') ...
+      mean_rmax=1.057  (76s)
+      top heads that achieved per-ep max: L8.H10:19 L5.H9:6 L2.H11:3 L0.H10:1 L5.H5:1
+      most-picked overall:               L9.H7:30 L8.H6:30 L0.H9:30 L1.H3:30 L10.H6:30 L8.H10:30 L3.H10:30 L7.H9:30 L5.H9:30 L5.H8:30
+
+[5/5] oracle (ablate all 144 heads per ep) ...
+      mean_best=2.175  (109s)
+      per-ep best heads: L0.H10:15
+
+[saved] /ddnlus/barsatkhadka/causality-RL/phase 6/results/transfer_mt_k1_summary.json
+
+=== TRANSFER HEADLINE (mt_k1) ===
+  random              : final=1.395  steps_to_90pct=28.8
+  trained (unknown          ): final=1.467  steps_to_90pct=21.7
+  trained (pretend_induction): final=2.178  steps_to_90pct=19.6
+  trained (pretend_ioi      ): final=1.057  steps_to_90pct=11.2
+  oracle ceiling      : 2.175
