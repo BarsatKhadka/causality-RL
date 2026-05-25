@@ -1,0 +1,35 @@
+{
+  "tag": "smoke",
+  "n_envs": 4,
+  "plan_k": 1,
+  "total_timesteps": 800,
+  "final_eval_per_task": {
+    "induction": 2.449755080540975,
+    "ioi": 2.0936861912409466
+  },
+  "fwd_calls_total": 10800,
+  "wall_time_sec": 206.9929575920105,
+  "eval_history": [
+    {
+      "step": 200,
+      "train_rmax": 2.0296352803707123,
+      "eval": {
+        "induction": 2.6055731773376465,
+        "ioi": 2.0410248562693596
+      },
+      "fwd_calls": 2000,
+      "elapsed_sec": 38.106260538101196
+    },
+    {
+      "step": 800,
+      "train_rmax": 2.1459601521492004,
+      "eval": {
+        "induction": 2.415095806121826,
+        "ioi": 1.584500040858984
+      },
+      "fwd_calls": 4800,
+      "elapsed_sec": 91.94305539131165
+    }
+  ],
+  "device": "cuda"
+}

@@ -1,0 +1,66 @@
+Unloading shared
+  WARNING: Did not unuse /cm/shared/modulefiles
+[start] Sun May 24 07:07:15 PM CDT 2026 K=5 N=8 TAG=mt_k5 STEPS=200000 host=node047
+name, memory.total [MiB], driver_version
+NVIDIA L40S, 46068 MiB, 570.172.08
+[setup] device = cuda
+[vec] loading shared gpt2 on cuda...
+Loaded pretrained model gpt2 into HookedTransformer
+[vec] corpus tokens: 200000
+[setup] N_envs=8  obs_dim=290  n_actions=144  episode_len=50  K_plan=5
+[setup] batch_size=400  minibatch=50  total_timesteps=200000
+[setup] policy params = 177553
+[train] step     400  train_rmax= 2.87  induction= 3.25  ioi= 3.17  fwd=6094  elapsed=115s
+[train] step    4000  train_rmax= 3.02  induction= 3.39  ioi= 3.17  fwd=26676  elapsed=523s
+[train] step    8000  train_rmax= 2.95  induction= 3.39  ioi= 3.17  fwd=48398  elapsed=951s
+[train] step   12000  train_rmax= 3.08  induction= 3.39  ioi= 3.17  fwd=69884  elapsed=1378s
+[train] step   16000  train_rmax= 2.95  induction= 3.39  ioi= 3.17  fwd=91376  elapsed=1794s
+[train] step   20000  train_rmax= 2.84  induction= 3.39  ioi= 3.17  fwd=113002  elapsed=2211s
+[train] step   24000  train_rmax= 3.11  induction= 3.39  ioi= 3.17  fwd=134540  elapsed=2622s
+[train] step   28000  train_rmax= 3.02  induction= 3.39  ioi= 3.17  fwd=156350  elapsed=3048s
+[train] step   32000  train_rmax= 2.89  induction= 3.39  ioi= 3.17  fwd=178430  elapsed=3475s
+[train] step   36000  train_rmax= 3.08  induction= 3.39  ioi= 3.17  fwd=200706  elapsed=3888s
+[train] step   40000  train_rmax= 3.18  induction= 3.39  ioi= 3.17  fwd=222940  elapsed=4332s
+[train] step   44000  train_rmax= 3.14  induction= 3.39  ioi= 3.17  fwd=244978  elapsed=4769s
+[train] step   48000  train_rmax= 3.37  induction= 3.39  ioi= 3.17  fwd=267012  elapsed=5217s
+[train] step   52000  train_rmax= 2.95  induction= 3.39  ioi= 3.17  fwd=289378  elapsed=5641s
+[train] step   56000  train_rmax= 3.05  induction= 3.39  ioi= 3.17  fwd=311194  elapsed=6067s
+[train] step   60000  train_rmax= 3.17  induction= 3.39  ioi= 3.17  fwd=333058  elapsed=6504s
+[train] step   64000  train_rmax= 3.44  induction= 3.39  ioi= 3.17  fwd=355588  elapsed=6938s
+[train] step   68000  train_rmax= 3.27  induction= 3.39  ioi= 3.17  fwd=377708  elapsed=7377s
+[train] step   72000  train_rmax= 3.01  induction= 3.39  ioi= 3.17  fwd=399634  elapsed=7799s
+[train] step   76000  train_rmax= 3.07  induction= 3.39  ioi= 3.17  fwd=422164  elapsed=8238s
+[train] step   80000  train_rmax= 3.08  induction= 3.39  ioi= 3.17  fwd=444642  elapsed=8673s
+[train] step   84000  train_rmax= 3.26  induction= 3.39  ioi= 3.17  fwd=466816  elapsed=9109s
+[train] step   88000  train_rmax= 3.10  induction= 3.39  ioi= 3.17  fwd=489280  elapsed=9540s
+[train] step   92000  train_rmax= 3.28  induction= 3.39  ioi= 3.17  fwd=511744  elapsed=9980s
+[train] step   96000  train_rmax= 3.33  induction= 3.39  ioi= 3.17  fwd=534318  elapsed=10418s
+[train] step  100000  train_rmax= 3.20  induction= 3.39  ioi= 3.17  fwd=556664  elapsed=10855s
+[train] step  104000  train_rmax= 3.16  induction= 3.39  ioi= 3.17  fwd=579128  elapsed=11284s
+[train] step  108000  train_rmax= 3.24  induction= 3.39  ioi= 3.17  fwd=601902  elapsed=11722s
+[train] step  112000  train_rmax= 2.88  induction= 3.39  ioi= 3.17  fwd=624254  elapsed=12159s
+[train] step  116000  train_rmax= 3.09  induction= 3.39  ioi= 3.17  fwd=646322  elapsed=12580s
+[train] step  120000  train_rmax= 3.00  induction= 3.39  ioi= 3.17  fwd=668454  elapsed=12995s
+[train] step  124000  train_rmax= 3.07  induction= 3.39  ioi= 3.17  fwd=690246  elapsed=13413s
+[train] step  128000  train_rmax= 3.06  induction= 3.39  ioi= 3.17  fwd=712310  elapsed=13840s
+[train] step  132000  train_rmax= 3.13  induction= 3.39  ioi= 3.17  fwd=734698  elapsed=14283s
+[train] step  136000  train_rmax= 3.06  induction= 3.39  ioi= 3.17  fwd=756960  elapsed=14715s
+[train] step  140000  train_rmax= 2.89  induction= 3.39  ioi= 3.17  fwd=779162  elapsed=15138s
+[train] step  144000  train_rmax= 3.37  induction= 3.39  ioi= 3.17  fwd=801126  elapsed=15561s
+[train] step  148000  train_rmax= 3.21  induction= 3.39  ioi= 3.17  fwd=823166  elapsed=16006s
+[train] step  152000  train_rmax= 3.10  induction= 3.39  ioi= 3.17  fwd=845352  elapsed=16422s
+[train] step  156000  train_rmax= 3.15  induction= 3.39  ioi= 3.17  fwd=867590  elapsed=16846s
+[train] step  160000  train_rmax= 2.90  induction= 3.39  ioi= 3.17  fwd=889644  elapsed=17285s
+[train] step  164000  train_rmax= 3.03  induction= 3.39  ioi= 3.17  fwd=911816  elapsed=17710s
+[train] step  168000  train_rmax= 3.19  induction= 3.39  ioi= 3.17  fwd=933902  elapsed=18144s
+[train] step  172000  train_rmax= 3.14  induction= 3.39  ioi= 3.17  fwd=955556  elapsed=18552s
+[train] step  176000  train_rmax= 3.12  induction= 3.39  ioi= 3.17  fwd=977696  elapsed=18983s
+[train] step  180000  train_rmax= 3.08  induction= 3.39  ioi= 3.17  fwd=999634  elapsed=19415s
+[train] step  184000  train_rmax= 3.02  induction= 3.39  ioi= 3.17  fwd=1021546  elapsed=19832s
+[train] step  188000  train_rmax= 3.03  induction= 3.39  ioi= 3.17  fwd=1043432  elapsed=20251s
+[train] step  192000  train_rmax= 3.31  induction= 3.39  ioi= 3.17  fwd=1065164  elapsed=20670s
+[train] step  196000  train_rmax= 3.11  induction= 3.39  ioi= 3.17  fwd=1087030  elapsed=21094s
+[train] step  200000  train_rmax= 3.37  induction= 3.39  ioi= 3.17  fwd=1108912  elapsed=21505s
+
+[done] tag=mt_k5  per-task final eval={'induction': 3.3855801582336427, 'ioi': 3.19142677684625}  fwd_calls=1122448  wall=21766s
+[done]  Mon May 25 01:10:19 AM CDT 2026
